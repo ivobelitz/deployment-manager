@@ -9,6 +9,10 @@ start syntax Deployment = deployment: HardwareNode+ hardwareNodes;
 
 syntax HardwareNode = hardwareNode: "HardwareNode" Id name SoftwareNode* softwareNodes;
 
-syntax SoftwareNode = softwareNode: "SoftwareNode" Id name Dependency dependencies;
+syntax SoftwareNode = softwareNode: "SoftwareNode" Id name Dependencies dependencies;
 
-syntax Dependency = dependency: "Dependencies" Id name;
+syntax Dependencies = dependencies: "Dependencies" "[" {Dependency ","}+ depList "]";
+
+syntax Dependency = dependency: Id name;
+
+syntax Str = string: "\"" ![\"]*  "\"";

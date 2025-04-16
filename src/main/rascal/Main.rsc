@@ -5,24 +5,28 @@ import Syntax;
 import IO;
 import Compile;
 
-void main(int testArgument=0) {
+void main() {
     // Parse the input file and generate the Dockerfile
     Deployment d = parseDeployment("example.dep");
 
-    list[str] dockerFiles = compile(d);
+    list[SoftwareNodeOutput] dockerFiles = compile(d);
 
-    int i = 1;
-
-    for (str dockerFile <- dockerFiles) {
-        loc outputFile = |project://deployment-manager/output/Dockerfile.<"<i>">|;
-        generateDockerfile(outputFile, dockerFile);
-        i+= 1;
+    for (SoftwareNodeOutput output <- dockerFiles) {
+        generateDockerfile(output);
     }
 }
 
-void generateDockerfile(loc outputPath, str dockerFileContent) {
-    writeFile(outputPath, dockerFileContent);
-    println("Dockerfile generated successfully at: <outputPath>");
+void generateDockerfile(SoftwareNodeOutput output) {
+    // Ensure directory exists
+    loc outputDir = |project://deployment-manager/<output.outputDir>|;
+    if (!exists(outputDir)) {
+        mkDirectory(outputDir);
+    }
+    
+    // Create the Dockerfile in the specified directory
+    loc outputFile = outputDir + "Dockerfile";
+    writeFile(outputFile, output.content);
+    println("Dockerfile generated successfully at: <outputFile>");
 }
 
 Deployment parseDeployment(str inputPath) {

@@ -1,3 +1,5 @@
 HardwareNode IoT_Gateway
     SoftwareNode incubator
-        Dependencies Python
+        Dependencies [Python, Java]
+    SoftwareNode simulator
+        Dependencies [Java]
