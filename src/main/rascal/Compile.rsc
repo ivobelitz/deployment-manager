@@ -3,6 +3,7 @@ module Compile
 import Syntax;
 import ParseTree;
 import lang::smtlib2::Compiler;
+import String;
 
 data SoftwareNodeOutput = softwareNodeOutput(str content, str outputDir);
 
@@ -27,7 +28,7 @@ SoftwareNodeOutput parseSoftwareNode(SoftwareNode sn) {
   }
   
   result += "COPY . /app\n";
-  result += "RUN make /app\n";
+  result += resolveExecutionCommand("<sn.executionCommand.command>");
   
   // Determine output directory - use default if not specified
   str outputDir = getOutputDir(sn);
@@ -44,6 +45,18 @@ str resolveDependency(str name) {
     case "Go": return "golang:1.16";
     default: return "alpine:latest"; // Default base image if dependency not recognized
   }
+}
+
+str resolveExecutionCommand(str input) {
+    str command = "CMD [";
+    list[str] args = split(" ", input);
+    for (int i <- [0 .. size(args) - 1]) {
+        command += "<args[i]>\", ";
+    }
+    int i = size(args);
+    command += "\"<args[i - 1]>";
+    command += "]";
+    return command;
 }
 
 str getOutputDir(SoftwareNode sn) {
