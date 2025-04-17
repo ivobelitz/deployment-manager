@@ -1,5 +1,7 @@
 HardwareNode IoT_Gateway
     SoftwareNode incubator
         Dependencies [Python, Java]
+        ExecutionCommand "python incubator.py"
     SoftwareNode simulator
-        Dependencies [Java]
+        Dependencies [Python]
+        ExecutionCommand "python simulator.py"
