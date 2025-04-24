@@ -5,16 +5,30 @@ extend lang::std::Id;
 extend lang::std::Whitespace;
 extend lang::std::Comment;
 
-start syntax Deployment = deployment: HardwareNode+ hardwareNodes;
+start syntax Deployment = deployment: Hardware+ hardwares;
 
-syntax HardwareNode = hardwareNode: "HardwareNode" Id name SoftwareNode* softwareNodes;
+syntax Hardware = hardware: "hardware" String name "{" Service* services "}";
 
-syntax SoftwareNode = softwareNode: "SoftwareNode" Id name Dependencies dependencies ExecutionCommand executionCommand;
+syntax Service = service: "service" String name "{" 
+                          Runtime+ runtimes
+                          Command command
+                          PublishesDecl? publishes
+                          SubscribesDecl? subscribes
+                          "}";
 
-syntax Dependencies = dependencies: "Dependencies" "[" {Dependency ","}+ depList "]";
+syntax Runtime = runtime: "runtime" String name "{" 
+                          VersionDecl? version 
+                          PackagesDecl? packages 
+                          "}";
 
-syntax Dependency = dependency: Id name;
+syntax VersionDecl = versionDecl: "version" "=" String version;
 
-syntax ExecutionCommand = command: "ExecutionCommand" Str command;
+syntax PackagesDecl = packagesDecl: "packages" "=" "[" {String ","}* packageList "]";
 
-syntax Str = string: "\"" ![\"]*  "\"";
+syntax Command = command: "command" "=" "[" {String ","}* commandParts "]";
+
+syntax PublishesDecl = publishesDecl: "publishes" "=" "[" {String ","}* topics "]";
+
+syntax SubscribesDecl = subscribesDecl: "subscribes" "=" "[" {String ","}* topics "]";
+
+lexical String = "\"" ![\"]*  "\"";

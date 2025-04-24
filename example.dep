@@ -1,7 +1,23 @@
-HardwareNode IoT_Gateway
-    SoftwareNode incubator
-        Dependencies [Python, Java]
-        ExecutionCommand "python3 /app/incubator.py"
-    SoftwareNode simulator
-        Dependencies [Python]
-        ExecutionCommand "python simulator.py"
+hardware "IoT_Gateway" {
+    service "incubator" {
+        runtime "python" {
+            version = "3.12"
+            packages = [ "numpy", "pandas" ]
+        }
+        runtime "java" {
+            version = "11"
+        }
+        command = ["python3", "/app/incubator.py"]
+        publishes = ["incubator_data"]
+        subscribes = ["simulator_data"]
+    }
+
+    service "simulator" {
+        runtime "python" {
+            version = "3.12"
+        }
+        command = ["python", "simulator.py"]
+        publishes = ["simulator_data"]
+        subscribes = ["incubator_data"]
+    }
+}

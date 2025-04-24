@@ -1,50 +1,40 @@
 module Compile
 
 import Syntax;
+import Runtimes;
 import ParseTree;
 import lang::smtlib2::Compiler;
 import String;
+import Helper;
 
 data SoftwareNodeOutput = softwareNodeOutput(str content, str outputDir);
 
-list[SoftwareNodeOutput] compile(Deployment d) {
+list[SoftwareNodeOutput] getDockerFiles(Deployment d) {
   // Extract all dependencies from all software nodes across all hardware nodes
   list[SoftwareNodeOutput] results = [];
   
-  for (HardwareNode hn <- d.hardwareNodes) {
-    for (SoftwareNode sn <- hn.softwareNodes) {
-      results += parseSoftwareNode(sn);
+  for (Hardware h <- d.hardwares) {
+    for (Service s <- h.services) {
+      results += prepareDockerfile(s);
     }
   }
   return results;
 }
 
-SoftwareNodeOutput parseSoftwareNode(SoftwareNode sn) {
+SoftwareNodeOutput prepareDockerfile(Service s) {
   str result = "";
   result += "FROM ubuntu:latest\n";
-  result += "RUN apt-get update && apt-get install -y \\\n";
-  for (Dependency d <- sn.dependencies.depList) {
-    result += "  " + resolveDependency("<d>") + " \\\n";
+  for (Runtime r <- s.runtimes) {
+    result += resolveRuntime(r) + " \n";
   }
   
   result += "COPY . /app\n";
-  result += resolveExecutionCommand("<sn.executionCommand.command>");
+  // result += resolveExecutionCommand("<s.command>");
   
   // Determine output directory - use default if not specified
-  str outputDir = getOutputDir(sn);
+  str outputDir = getOutputDir(s);
   
   return softwareNodeOutput(result, outputDir);
-}
-
-str resolveDependency(str name) {
-  switch (name) {
-    case "Python": return "python:3.8";
-    case "Java": return "openjdk-11-jre-headless";
-    case "Node": return "node:14";
-    case "Ruby": return "ruby:2.7";
-    case "Go": return "golang:1.16";
-    default: return "alpine:latest"; // Default base image if dependency not recognized
-  }
 }
 
 str resolveExecutionCommand(str input) {
@@ -59,6 +49,40 @@ str resolveExecutionCommand(str input) {
     return command;
 }
 
-str getOutputDir(SoftwareNode sn) {
-  return "output/<sn.name>"; // Always use the software node name for the output directory
+str getOutputDir(Service s) {
+  str serviceName = stripQuotes("<s.name>");
+  return "output/" + serviceName + "/";
 }
+
+SoftwareNodeOutput getDockerComposeFile(Deployment d) {
+  str dockerComposeContent = "version: \'3\' \nservices: \n";
+  
+  for (Hardware h <- d.hardwares) {
+    for (Service s <- h.services) {
+      str serviceName = stripQuotes("<s.name>");
+      dockerComposeContent += "  " + serviceName + ": \n";
+      dockerComposeContent += "    build: ./<serviceName>\n";
+      dockerComposeContent += "    container_name: <serviceName>\n";
+
+      if (PublishesDecl publishesDecl <- s.publishes || SubscribesDecl subscribesDecl <- s.subscribes) {
+        dockerComposeContent += "    environment: \n";  
+        dockerComposeContent += "      - RABBITMQ_HOST=rabbitmq\n";
+      }
+
+      if (PublishesDecl publishesDecl <- s.publishes) {
+        list[str] topics = parsePackageList("<publishesDecl.topics>");
+        for (str topic <- topics) {
+          dockerComposeContent += "      - PUB_QUEUE=<topic>\n";
+        }
+      }
+      if (SubscribesDecl subscribesDecl <- s.subscribes) {
+        list[str] topics = parsePackageList("<subscribesDecl.topics>");
+        for (str topic <- topics) {
+          dockerComposeContent += "      - SUB_QUEUE=<topic>\n";
+        }
+      }
+    }
+  } 
+  str outputDir = "output/";
+  return softwareNodeOutput(dockerComposeContent, outputDir);
+} 
