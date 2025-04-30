@@ -24,3 +24,11 @@ list[str] parsePackageList(str packageListStr) {
     
     return result;
 }
+
+str insertTabs(int number) {
+  str tabs = "";
+  for (int i <- [0 .. number * 2]) {
+    tabs+=" ";
+  }
+  return tabs;
+}

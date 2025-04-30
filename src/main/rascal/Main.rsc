@@ -5,20 +5,22 @@ import Syntax;
 import IO;
 import Compile;
 
+data File = file(str content, str outputDir);
+
 void main() {
     // Parse the input file and generate the Dockerfile
     Deployment d = parseDeployment("example.dep");
 
-    list[SoftwareNodeOutput] dockerFiles = getDockerFiles(d);
-    SoftwareNodeOutput dockerComposeFile = getDockerComposeFile(d);
+    list[File] dockerFiles = getDockerFiles(d);
+    File dockerComposeFile = getDockerComposeFile(d);
 
-    for (SoftwareNodeOutput output <- dockerFiles) {
+    for (File output <- dockerFiles) {
         writeDockerfile(output);
     }
     writeDockerComposeFile(dockerComposeFile);
 }
 
-void writeDockerfile(SoftwareNodeOutput output) {
+void writeDockerfile(File output) {
     // Ensure directory exists
     loc outputDir = |project://deployment-manager/<output.outputDir>|;
     if (!exists(outputDir)) {
@@ -31,7 +33,7 @@ void writeDockerfile(SoftwareNodeOutput output) {
     println("Dockerfile generated successfully at: <outputFile>");
 }
 
-void writeDockerComposeFile(SoftwareNodeOutput output) {
+void writeDockerComposeFile(File output) {
     // Ensure directory exists
     loc outputDir = |project://deployment-manager/<output.outputDir>|;
     if (!exists(outputDir)) {

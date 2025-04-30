@@ -14,13 +14,13 @@ str resolveRuntime(Runtime r) {
     println(name);
     if (VersionDecl versionDecl <- r.version) {
         version = stripQuotes("<versionDecl.version>");
-        println("   Version: " + version);
+        println(insertTabs(1) + "Version: " + version);
     }
     if (PackagesDecl packagesDecl <- r.packages) {
         str packagesStr = "<packagesDecl.packageList>";
         packagesList = parsePackageList(packagesStr);
         // packages = intercalate(" ", packagesList);  // Join with spaces for command line usage
-        println("   Packages: " + toString(packagesList));
+        println(insertTabs(1) + "Packages: " + toString(packagesList));
     }
 
     switch (name) {

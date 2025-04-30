@@ -6,12 +6,11 @@ import ParseTree;
 import lang::smtlib2::Compiler;
 import String;
 import Helper;
+import Main;
 
-data SoftwareNodeOutput = softwareNodeOutput(str content, str outputDir);
-
-list[SoftwareNodeOutput] getDockerFiles(Deployment d) {
+list[File] getDockerFiles(Deployment d) {
   // Extract all dependencies from all software nodes across all hardware nodes
-  list[SoftwareNodeOutput] results = [];
+  list[File] results = [];
   
   for (Hardware h <- d.hardwares) {
     for (Service s <- h.services) {
@@ -21,9 +20,9 @@ list[SoftwareNodeOutput] getDockerFiles(Deployment d) {
   return results;
 }
 
-SoftwareNodeOutput prepareDockerfile(Service s) {
+File prepareDockerfile(Service s) {
   str result = "";
-  result += "FROM ubuntu:latest\n";
+  result += "FROM alpine:latest\n";
   for (Runtime r <- s.runtimes) {
     result += resolveRuntime(r) + " \n";
   }
@@ -34,7 +33,7 @@ SoftwareNodeOutput prepareDockerfile(Service s) {
   // Determine output directory - use default if not specified
   str outputDir = getOutputDir(s);
   
-  return softwareNodeOutput(result, outputDir);
+  return file(result, outputDir);
 }
 
 str resolveExecutionCommand(str input) {
@@ -54,35 +53,61 @@ str getOutputDir(Service s) {
   return "output/" + serviceName + "/";
 }
 
-SoftwareNodeOutput getDockerComposeFile(Deployment d) {
+File getDockerComposeFile(Deployment d) {
   str dockerComposeContent = "version: \'3\' \nservices: \n";
-  
+
   for (Hardware h <- d.hardwares) {
     for (Service s <- h.services) {
       str serviceName = stripQuotes("<s.name>");
-      dockerComposeContent += "  " + serviceName + ": \n";
-      dockerComposeContent += "    build: ./<serviceName>\n";
-      dockerComposeContent += "    container_name: <serviceName>\n";
+      dockerComposeContent += insertTabs(1) + serviceName + ": \n";
+      dockerComposeContent += insertTabs(2) + "build: ./<serviceName>\n";
+      dockerComposeContent += insertTabs(2) + "container_name: <serviceName>\n";
 
       if (PublishesDecl publishesDecl <- s.publishes || SubscribesDecl subscribesDecl <- s.subscribes) {
-        dockerComposeContent += "    environment: \n";  
-        dockerComposeContent += "      - RABBITMQ_HOST=rabbitmq\n";
+        dockerComposeContent += insertTabs(2) + "environment: \n";  
+        dockerComposeContent += insertTabs(3) + "- RABBITMQ_HOST=rabbitmq\n";
       }
 
       if (PublishesDecl publishesDecl <- s.publishes) {
-        list[str] topics = parsePackageList("<publishesDecl.topics>");
-        for (str topic <- topics) {
-          dockerComposeContent += "      - PUB_QUEUE=<topic>\n";
+        str packagesStr = "<publishesDecl.topics>";
+        list[str] topics = parsePackageList(packagesStr);
+        
+        // Transform topics list to JSON format: {"topic1": "topic1", "topic2": "topic2", ...}
+        if (size(topics) > 0) {
+          str jsonTopics = "{";
+          for (int i <- [0..size(topics)]) {
+            jsonTopics += "\\\"<topics[i]>\\\": \\\"<topics[i]>\\\"";
+            if (i < size(topics) - 1) {
+              jsonTopics += ", ";
+            }
+          }
+          jsonTopics += "}";
+          
+          dockerComposeContent += insertTabs(3) + "- \"PUB_TOPICS=<jsonTopics>\"\n";         
         }
       }
+      
       if (SubscribesDecl subscribesDecl <- s.subscribes) {
-        list[str] topics = parsePackageList("<subscribesDecl.topics>");
-        for (str topic <- topics) {
-          dockerComposeContent += "      - SUB_QUEUE=<topic>\n";
+        str packagesStr = "<subscribesDecl.topics>";
+        list[str] topics = parsePackageList(packagesStr);
+        
+        // Transform topics list to JSON format: {"topic1": "topic1", "topic2": "topic2", ...}
+        if (size(topics) > 0) {
+          str jsonTopics = "{";
+          for (int i <- [0..size(topics)]) {
+            jsonTopics += "\\\"<topics[i]>\\\": \\\"<topics[i]>\\\"";
+            if (i < size(topics) - 1) {
+              jsonTopics += ", ";
+            }
+          }
+          jsonTopics += "}";
+          
+          dockerComposeContent += insertTabs(3) + "- \"SUB_TOPICS=<jsonTopics>\"\n";
         }
       }
     }
   } 
   str outputDir = "output/";
-  return softwareNodeOutput(dockerComposeContent, outputDir);
-} 
+  return file(dockerComposeContent, outputDir);
+}
+
