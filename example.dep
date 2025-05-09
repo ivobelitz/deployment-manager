@@ -7,17 +7,17 @@ hardware "IoT_Gateway" {
         runtime "java" {
             version = "11"
         }
-        command = ["python3", "/app/incubator.py"]
-        publishes = ["incubator_data"]
-        subscribes = ["simulator_data"]
+        command = "python3 /app/incubator.py"
+        publishes = ["incubator_to_sim"]
+        subscribes = ["sim_to_incubator"]
     }
 
     service "simulator" {
         runtime "python" {
             version = "3.12"
         }
-        command = ["python", "simulator.py"]
-        publishes = ["simulator_data"]
-        subscribes = ["incubator_data"]
+        command = "python simulator.py"
+        publishes = ["sim_to_incubator"]
+        subscribes = ["incubator_to_sim"]
     }
 }

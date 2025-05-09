@@ -3,9 +3,9 @@ module Main
 import ParseTree;
 import Syntax;
 import IO;
-import Compile;
-
-data File = file(str content, str outputDir);
+import Dockerfiles;
+import DockerCompose;
+import Datamodel;
 
 void main() {
     // Parse the input file and generate the Dockerfile

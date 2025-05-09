@@ -25,7 +25,7 @@ syntax VersionDecl = versionDecl: "version" "=" String version;
 
 syntax PackagesDecl = packagesDecl: "packages" "=" "[" {String ","}* packageList "]";
 
-syntax Command = command: "command" "=" "[" {String ","}* commandParts "]";
+syntax Command = command: "command" "=" String command;
 
 syntax PublishesDecl = publishesDecl: "publishes" "=" "[" {String ","}* topics "]";
 
