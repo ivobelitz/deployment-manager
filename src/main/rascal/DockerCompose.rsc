@@ -19,15 +19,15 @@ File getDockerComposeFile(Deployment d) {
       dockerComposeContent += insertTabs(2) + "build: ./<serviceName>\n";
       dockerComposeContent += insertTabs(2) + "container_name: <serviceName>\n";
 
-      if (PublishesDecl publishesDecl <- s.publishes || SubscribesDecl subscribesDecl <- s.subscribes) {
+      if (PublishList publishList <- s.publishes || SubscribeList subscribeList <- s.subscribes) {
         dockerComposeContent += insertTabs(2) + "environment: \n";  
         dockerComposeContent += insertTabs(3) + "- RABBITMQ_HOST=rabbitmq\n";
       }
 
-      if (PublishesDecl publishesDecl <- s.publishes) {
-        str packagesStr = "<publishesDecl.topics>";
-        list[str] topics = parsePackageList(packagesStr);
-        println(topics);
+      if (PublishList publishList <- s.publishes) {
+        str packagesStr = "<publishList.topics>";
+        list[str] topics = parseList(packagesStr);
+        // println(topics);
         
         // Transform topics list to JSON format: {"topic1": "topic1", "topic2": "topic2", ...}
         if (size(topics) > 0) {
@@ -44,9 +44,9 @@ File getDockerComposeFile(Deployment d) {
         }
       }
       
-      if (SubscribesDecl subscribesDecl <- s.subscribes) {
-        str packagesStr = "<subscribesDecl.topics>";
-        list[str] topics = parsePackageList(packagesStr);
+      if (SubscribeList subscribeList <- s.subscribes) {
+        str packagesStr = "<subscribeList.topics>";
+        list[str] topics = parseList(packagesStr);
         
         // Transform topics list to JSON format: {"topic1": "topic1", "topic2": "topic2", ...}
         if (size(topics) > 0) {
@@ -62,8 +62,16 @@ File getDockerComposeFile(Deployment d) {
           dockerComposeContent += insertTabs(3) + "- \"SUB_TOPICS=<jsonTopics>\"\n";
         }
       }
+      
+      // Add volume mount for config.json if service has configuration
+      if (Config config <- s.config) {
+        if (!contains(dockerComposeContent, insertTabs(2) + "volumes:")) {
+          dockerComposeContent += insertTabs(2) + "volumes:\n";
+        }
+        dockerComposeContent += insertTabs(3) + "- ./<serviceName>/config.json:/app/config.json\n";
+      }
     }
   } 
   str outputDir = "output/";
-  return file(dockerComposeContent, outputDir);
+  return file(dockerComposeContent, outputDir, "docker-compose.yml");
 }

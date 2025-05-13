@@ -5,45 +5,39 @@ import Syntax;
 import IO;
 import Dockerfiles;
 import DockerCompose;
+import ConfigurationFiles;
 import Datamodel;
 
 void main() {
-    // Parse the input file and generate the Dockerfile
+    // Parse the input file and generate files
     Deployment d = parseDeployment("example.dep");
 
     list[File] dockerFiles = getDockerFiles(d);
     File dockerComposeFile = getDockerComposeFile(d);
+    list[File] configFiles = getConfigFiles(d);
 
     for (File output <- dockerFiles) {
-        writeDockerfile(output);
+        writeFile(output);
     }
-    writeDockerComposeFile(dockerComposeFile);
+
+    for (File output <- configFiles) {
+        writeFile(output);
+    }
+
+    writeFile(dockerComposeFile);
 }
 
-void writeDockerfile(File output) {
+void writeFile(File output) {
     // Ensure directory exists
     loc outputDir = |project://deployment-manager/<output.outputDir>|;
     if (!exists(outputDir)) {
         mkDirectory(outputDir);
     }
     
-    // Create the Dockerfile in the specified directory
-    loc outputFile = outputDir + "Dockerfile";
+    // Create the file in the specified directory
+    loc outputFile = outputDir + output.fileName;
     writeFile(outputFile, output.content);
-    println("Dockerfile generated successfully at: <outputFile>");
-}
-
-void writeDockerComposeFile(File output) {
-    // Ensure directory exists
-    loc outputDir = |project://deployment-manager/<output.outputDir>|;
-    if (!exists(outputDir)) {
-        mkDirectory(outputDir);
-    }
-    
-    // Create the Docker Compose file in the specified directory
-    loc outputFile = outputDir + "docker-compose.yml";
-    writeFile(outputFile, output.content);
-    println("Docker Compose file generated successfully at: <outputFile>");
+    println("File <outputFile> generated successfully at: <outputFile>");
 }
 
 Deployment parseDeployment(str inputPath) {

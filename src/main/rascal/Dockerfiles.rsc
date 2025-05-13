@@ -32,7 +32,7 @@ File prepareDockerfile(Service s) {
   // Determine output directory - use default if not specified
   str outputDir = getOutputDir(s);
   
-  return file(result, outputDir);
+  return file(result, outputDir, "Dockerfile");
 }
 
 str resolveExecutionCommand(str input) {

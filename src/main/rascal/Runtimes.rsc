@@ -11,16 +11,16 @@ str resolveRuntime(Runtime r) {
     str version = "";
     list[str] packagesList = [];
 
-    println(name);
+    // println(name);
     if (VersionDecl versionDecl <- r.version) {
         version = stripQuotes("<versionDecl.version>");
-        println(insertTabs(1) + "Version: " + version);
+        // println(insertTabs(1) + "Version: " + version);
     }
     if (PackagesDecl packagesDecl <- r.packages) {
         str packagesStr = "<packagesDecl.packageList>";
-        packagesList = parsePackageList(packagesStr);
+        packagesList = parseList(packagesStr);
         // packages = intercalate(" ", packagesList);  // Join with spaces for command line usage
-        println(insertTabs(1) + "Packages: " + toString(packagesList));
+        // println(insertTabs(1) + "Packages: " + toString(packagesList));
     }
 
     switch (name) {

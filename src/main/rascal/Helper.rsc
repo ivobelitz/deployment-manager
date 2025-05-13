@@ -9,7 +9,7 @@ str stripQuotes(str input) {
   return input;
 }
 
-list[str] parsePackageList(str packageListStr) {
+list[str] parseList(str packageListStr) {
     // Split the string by commas
     list[str] packagesParts = split(",", packageListStr);
     

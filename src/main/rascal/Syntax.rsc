@@ -12,8 +12,9 @@ syntax Hardware = hardware: "hardware" String name "{" Service* services "}";
 syntax Service = service: "service" String name "{" 
                           Runtime+ runtimes
                           Command command
-                          PublishesDecl? publishes
-                          SubscribesDecl? subscribes
+                          PublishList? publishes
+                          SubscribeList? subscribes
+                          Config? config
                           "}";
 
 syntax Runtime = runtime: "runtime" String name "{" 
@@ -27,8 +28,21 @@ syntax PackagesDecl = packagesDecl: "packages" "=" "[" {String ","}* packageList
 
 syntax Command = command: "command" "=" String command;
 
-syntax PublishesDecl = publishesDecl: "publishes" "=" "[" {String ","}* topics "]";
+syntax PublishList = publishList: "publishes" "=" "[" {String ","}* topics "]";
 
-syntax SubscribesDecl = subscribesDecl: "subscribes" "=" "[" {String ","}* topics "]";
+syntax SubscribeList = subscribeList: "subscribes" "=" "[" {String ","}* topics "]";
 
+syntax Config = config: "config" "=" "{" {ConfigItem ","}* items "}";
+
+syntax ConfigItem = configItem: String k ":" ConfigValue v;
+
+syntax ConfigValue = 
+                   | stringVal: String string
+                   | intVal: Int integer
+                   | floatVal: Float float
+                   | boolVal: Boolean boolean;
+
+lexical Int = [0-9]+;
+lexical Float = [0-9]+ "." [0-9]+;
+lexical Boolean = "true" | "false";
 lexical String = "\"" ![\"]*  "\"";

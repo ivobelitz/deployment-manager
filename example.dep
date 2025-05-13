@@ -10,6 +10,10 @@ hardware "IoT_Gateway" {
         command = "python3 /app/incubator.py"
         publishes = ["incubator_to_sim"]
         subscribes = ["sim_to_incubator"]
+        config = {
+        "temperature": 37.0,
+        "humidity": 50.0
+        }
     }
 
     service "simulator" {
