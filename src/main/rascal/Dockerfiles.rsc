@@ -21,12 +21,20 @@ list[File] getDockerFiles(Deployment d) {
 
 File prepareDockerfile(Service s) {
   str result = "";
-  result += "FROM alpine:latest\n"; // Use a lightweight base image
+  result += "FROM ubuntu:latest\n"; // Use a lightweight base image
   for (Runtime r <- s.runtimes) {
-    result += resolveRuntime(r) + " \n";
+    result += "<resolveRuntime(r)>\n";
   }
   
-  result += "COPY . /app\n"; // Copy application files to the container
+  if (CopyFiles copyFiles <- s.copyFiles) {
+    for (CopyFileItem item <- copyFiles.items) {
+      str source = stripQuotes("<item.source>");
+      str destination = stripQuotes("<item.destination>");
+      result += "COPY <source> <destination>\n";
+    }
+    result += "\n";
+  }
+
   result += resolveExecutionCommand("<s.command.command>");
   
   // Determine output directory - use default if not specified
@@ -36,11 +44,11 @@ File prepareDockerfile(Service s) {
 }
 
 str resolveExecutionCommand(str input) {
-    str command = "CMD " + stripQuotes("<input>");
+    str command = "CMD <stripQuotes("<input>")>";
     return command;
 }
 
 str getOutputDir(Service s) {
   str serviceName = stripQuotes("<s.name>");
-  return "output/" + serviceName + "/";
+  return "output/<serviceName>/";
 }
