@@ -10,6 +10,7 @@ hardware "IoT_Gateway" {
         command = "python3 /app/incubator.py"
         publishes = ["incubator_to_sim"]
         subscribes = ["sim_to_incubator"]
+        ports = [8080, 8081]
         copy = [
             { from = "./config.json", to = "/config.json"},
             { from = "./Dockerfile", to = "/Dockerfile"},

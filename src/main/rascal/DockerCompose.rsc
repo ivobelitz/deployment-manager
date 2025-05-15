@@ -19,6 +19,14 @@ File getDockerComposeFile(Deployment d) {
       dockerComposeContent += insertTabs(2) + "build: ./<serviceName>\n";
       dockerComposeContent += insertTabs(2) + "container_name: <serviceName>\n";
 
+      // Add ports mapping if specified
+      if (PortsList portsList <- s.ports) {
+        dockerComposeContent += insertTabs(2) + "ports: \n";
+        for (port <- portsList.ports) {
+          dockerComposeContent += insertTabs(3) + "- <port>:<port>\n";
+        }
+      }
+
       if (PublishList publishList <- s.publishes || SubscribeList subscribeList <- s.subscribes) {
         dockerComposeContent += insertTabs(2) + "environment: \n";  
         dockerComposeContent += insertTabs(3) + "- RABBITMQ_HOST=rabbitmq\n";

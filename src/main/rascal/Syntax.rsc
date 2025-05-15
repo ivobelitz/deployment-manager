@@ -17,6 +17,7 @@ syntax Service = service: "service" String name "{"
                           Command command
                           PublishList? publishes
                           SubscribeList? subscribes
+                          PortsList? ports
                           CopyFiles? copyFiles
                           Config? config
                           "}";
@@ -39,6 +40,9 @@ syntax PublishList = publishList: "publishes" "=" "[" {String ","}* topics "]";
 
 // List of data points that the container subscribes / listens to
 syntax SubscribeList = subscribeList: "subscribes" "=" "[" {String ","}* topics "]";
+
+// List of ports to expose from the container
+syntax PortsList = portsList: "ports" "=" "[" {Int ","}* ports "]";
 
 // List of files that are copied into the container
 syntax CopyFiles = copyFiles: "copy" "=" "[" {CopyFileItem ","}* items "]";
