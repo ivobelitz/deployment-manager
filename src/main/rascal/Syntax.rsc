@@ -14,12 +14,13 @@ syntax Hardware = hardware: "hardware" String name "{" Service* services "}";
 // Service contains a number of concepts 
 syntax Service = service: "service" String name "{" 
                           Runtime+ runtimes
-                          Command command
                           PublishList? publishes
                           SubscribeList? subscribes
                           PortsList? ports
                           CopyFiles? copyFiles
                           Config? config
+                          BuildCommands? buildCommands
+                          ExecutionCommand executionCommand
                           "}";
 
 // Defining a runtime (Python, Java, etc.) along with its version and packages
@@ -33,7 +34,10 @@ syntax VersionDecl = versionDecl: "version" "=" String version;
 syntax PackagesDecl = packagesDecl: "packages" "=" "[" {String ","}* packageList "]";
 
 // Execution command that starts the application
-syntax Command = command: "command" "=" String command;
+syntax ExecutionCommand = executionCommand: "executionCommand" "=" String command;
+
+// Build commands that are executed during the build process
+syntax BuildCommands = buildCommands: "buildCommands" "=" "[" {String ","}* commands "]";
 
 // List of data points that the container publishes / sends data
 syntax PublishList = publishList: "publishes" "=" "[" {String ","}* topics "]";

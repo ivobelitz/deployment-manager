@@ -7,6 +7,7 @@ import Helper;
 import Main;
 import Datamodel;
 import IO;
+import Type; 
 
 list[File] getDockerFiles(Deployment d) {
   list[File] results = [];
@@ -21,7 +22,6 @@ list[File] getDockerFiles(Deployment d) {
 
 File prepareDockerfile(Service s) {
   str result = "";
-  result += "FROM ubuntu:latest\n"; // Use a lightweight base image
   for (Runtime r <- s.runtimes) {
     result += "<resolveRuntime(r)>\n";
   }
@@ -35,7 +35,15 @@ File prepareDockerfile(Service s) {
     result += "\n";
   }
 
-  result += resolveExecutionCommand("<s.command.command>");
+  if (BuildCommands buildCommands <- s.buildCommands) {
+    list[str] commands = parseList("<buildCommands.commands>");
+    for (str command <- commands) {
+      result += "RUN <stripQuotes(command)>\n";
+    }
+    result += "\n";
+  }
+
+  result += resolveExecutionCommand("<s.executionCommand.command>");
   
   // Determine output directory - use default if not specified
   str outputDir = getOutputDir(s);

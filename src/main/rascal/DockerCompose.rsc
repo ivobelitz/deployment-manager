@@ -12,19 +12,23 @@ import List;
 File getDockerComposeFile(Deployment d) {
   str dockerComposeContent = "version: \'3\' \nservices: \n";
 
+  bool hasPorts = false;
+
   for (Hardware h <- d.hardwares) {
     for (Service s <- h.services) {
       str serviceName = stripQuotes("<s.name>");
       dockerComposeContent += insertTabs(1) + serviceName + ": \n";
-      dockerComposeContent += insertTabs(2) + "build: ./<serviceName>\n";
-      dockerComposeContent += insertTabs(2) + "container_name: <serviceName>\n";
+      dockerComposeContent += insertTabs(2) + "image: <serviceName>\n";
 
       // Add ports mapping if specified
       if (PortsList portsList <- s.ports) {
+        hasPorts = true;
         dockerComposeContent += insertTabs(2) + "ports: \n";
         for (port <- portsList.ports) {
           dockerComposeContent += insertTabs(3) + "- <port>:<port>\n";
         }
+        dockerComposeContent += insertTabs(2) + "networks: \n";
+        dockerComposeContent += insertTabs(3) + " - app-network\n";
       }
 
       if (PublishList publishList <- s.publishes || SubscribeList subscribeList <- s.subscribes) {
@@ -72,12 +76,18 @@ File getDockerComposeFile(Deployment d) {
       }
       
       // Add volume mount for config.json if service has configuration
-      if (Config config <- s.config) {
-        if (!contains(dockerComposeContent, insertTabs(2) + "volumes:")) {
-          dockerComposeContent += insertTabs(2) + "volumes:\n";
-        }
-        dockerComposeContent += insertTabs(3) + "- ./<serviceName>/config.json:/app/config.json\n";
-      }
+      // if (Config config <- s.config) {
+      //   if (!contains(dockerComposeContent, insertTabs(2) + "volumes:")) {
+      //     dockerComposeContent += insertTabs(2) + "volumes:\n";
+      //   }
+      //   dockerComposeContent += insertTabs(3) + "- ./<serviceName>/config.json:/app/config.json\n";
+      // }
+    }
+    // Add network configuration for the hardware
+    if (hasPorts) {
+      dockerComposeContent += "networks:\n";
+      dockerComposeContent += insertTabs(1) + "app-network:\n";
+      dockerComposeContent += insertTabs(2) + "driver: bridge\n";
     }
   } 
   str outputDir = "output/";

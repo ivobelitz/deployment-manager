@@ -26,6 +26,8 @@ str resolveRuntime(Runtime r) {
     switch (name) {
         case "python": return resolvePythonDependency(version, packagesList);
         case "java": return resolveJavaDependency(version);
+        case "influxdb": return resolveInfluxDBDependency(version);
+        case "rabbitmq": return resolveRabbitMQDependency(version);
         default: return "alpine:latest"; // Default base image if dependency not recognized
     }
 }
@@ -59,4 +61,12 @@ str resolveJavaDependency(str version) {
     command += "    apt-get clean\n";
 
     return command;
+}
+
+str resolveInfluxDBDependency(str version) {
+    return "FROM quay.io/influxdb/influxdb:v2.0.3\n";
+}
+
+str resolveRabbitMQDependency(str version) {
+    return "FROM rabbitmq:3.12-management\n";
 }
