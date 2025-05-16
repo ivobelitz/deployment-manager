@@ -10,7 +10,7 @@ import IO;
 import List;
 
 File getDockerComposeFile(Deployment d) {
-  str dockerComposeContent = "version: \'3\' \nservices: \n";
+  str dockerComposeContent = "services: \n";
 
   bool hasPorts = false;
 
@@ -27,8 +27,21 @@ File getDockerComposeFile(Deployment d) {
         for (port <- portsList.ports) {
           dockerComposeContent += insertTabs(3) + "- <port>:<port>\n";
         }
+      }
+      
+      // Add volumes mapping if specified
+      if (VolumesList volumesList <- s.volumes) {
+        dockerComposeContent += insertTabs(2) + "volumes: \n";
+        for (VolumeItem item <- volumesList.items) {
+          str source = stripQuotes("<item.source>");
+          str destination = stripQuotes("<item.destination>");
+          dockerComposeContent += insertTabs(3) + "- <source>:<destination>\n";
+        }
+      }
+
+      if (hasPorts) {
         dockerComposeContent += insertTabs(2) + "networks: \n";
-        dockerComposeContent += insertTabs(3) + " - app-network\n";
+        dockerComposeContent += insertTabs(3) + " - app-network\n"; 
       }
 
       if (PublishList publishList <- s.publishes || SubscribeList subscribeList <- s.subscribes) {
@@ -76,12 +89,12 @@ File getDockerComposeFile(Deployment d) {
       }
       
       // Add volume mount for config.json if service has configuration
-      // if (Config config <- s.config) {
-      //   if (!contains(dockerComposeContent, insertTabs(2) + "volumes:")) {
-      //     dockerComposeContent += insertTabs(2) + "volumes:\n";
-      //   }
-      //   dockerComposeContent += insertTabs(3) + "- ./<serviceName>/config.json:/app/config.json\n";
-      // }
+      if (Config config <- s.config) {
+        if (!contains(dockerComposeContent, insertTabs(2) + "volumes:")) {
+          dockerComposeContent += insertTabs(2) + "volumes:\n";
+        }
+        dockerComposeContent += insertTabs(3) + "- ./<serviceName>/config.json:/app/config.json\n";
+      }
     }
     // Add network configuration for the hardware
     if (hasPorts) {

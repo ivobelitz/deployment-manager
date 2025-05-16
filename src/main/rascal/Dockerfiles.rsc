@@ -35,6 +35,14 @@ File prepareDockerfile(Service s) {
     result += "\n";
   }
 
+  if (VolumesList volumesList <- s.volumes) {
+    for (VolumeItem item <- volumesList.items) {
+        str destination = stripQuotes("<item.destination>");
+        result += "RUN mkdir -p <destination>\n";
+      }
+      result += "\n";
+  }
+
   if (BuildCommands buildCommands <- s.buildCommands) {
     list[str] commands = parseList("<buildCommands.commands>");
     for (str command <- commands) {
@@ -43,7 +51,10 @@ File prepareDockerfile(Service s) {
     result += "\n";
   }
 
-  result += resolveExecutionCommand("<s.executionCommand.command>");
+  if (ExecutionCommand executionCommand <- s.executionCommand) {
+    str command = stripQuotes("<executionCommand.command>");
+    result += "CMD <command>\n";
+  }
   
   // Determine output directory - use default if not specified
   str outputDir = getOutputDir(s);

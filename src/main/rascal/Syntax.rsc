@@ -17,10 +17,11 @@ syntax Service = service: "service" String name "{"
                           PublishList? publishes
                           SubscribeList? subscribes
                           PortsList? ports
+                          VolumesList? volumes
                           CopyFiles? copyFiles
                           Config? config
                           BuildCommands? buildCommands
-                          ExecutionCommand executionCommand
+                          ExecutionCommand? executionCommand
                           "}";
 
 // Defining a runtime (Python, Java, etc.) along with its version and packages
@@ -47,6 +48,11 @@ syntax SubscribeList = subscribeList: "subscribes" "=" "[" {String ","}* topics 
 
 // List of ports to expose from the container
 syntax PortsList = portsList: "ports" "=" "[" {Int ","}* ports "]";
+
+// List of volumes to mount into the container
+syntax VolumesList = volumesList: "volumes" "=" "[" {VolumeItem ","}* items "]";
+
+syntax VolumeItem = volumeItem: "{" "from" "=" String source "," "to" "=" String destination "}";
 
 // List of files that are copied into the container
 syntax CopyFiles = copyFiles: "copy" "=" "[" {CopyFileItem ","}* items "]";
