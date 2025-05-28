@@ -1,6 +1,7 @@
 hardware "test_machine" {
     service "influxdb" {
         runtime "influxdb" {}
+        publishes = ["topic1", "topic2"]
         ports = [8086, 8088]
         volumes = [
             { from = "./digital_twin/data_access/influxdbserver/influxdb", to = "/var/lib/influxdb/" }
@@ -25,6 +26,7 @@ hardware "test_machine" {
         runtime "python" {
             version = "3.11"
         }
+        subscribes = ["topic1"]
         copy = [
             { from = ".", to = "/"}
         ]

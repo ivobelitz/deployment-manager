@@ -1,8 +1,8 @@
 hardware "IoT_Gateway" {
     service "incubator" {
         runtime "rabbitmq" {}
-        publishes = ["incubator_to_sim"]
-        subscribes = ["sim_to_incubator"]
+        input: "temperature"
+        output: "humidity"
         ports = [8080, 8081]
         copy = [
             { from = "./config.json", to = "/config.json"},
@@ -23,12 +23,27 @@ hardware "IoT_Gateway" {
         runtime "python" {
             version = "3.12"
         }
-        publishes = ["sim_to_incubator"]
-        subscribes = ["incubator_to_sim"]
+        input: "humidity"
+        output: "temperature"
         volumes = [
             { from = "~/simulator/src", to = "/app/src" },
             { from = "./logs", to = "/var/log/simulator" }
         ]
         executionCommand = "python simulator.py"
+    }
+
+    data {
+        "temperature" {
+            type = "rabbitmq-mqtt"
+            broker = "mqtt://broker.hivemq.com"
+            topic = "sensor/temperature"
+            qos = 1
+        }
+        "humidity" {
+            type = "rabbitmq-amqp"
+            exchange = "sensor_data"
+            routingKey = "sensor/humidity"
+            queue = "humidity_queue"
+        }
     }
 }

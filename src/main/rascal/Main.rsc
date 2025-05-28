@@ -10,7 +10,7 @@ import Datamodel;
 
 void main() {
     // Parse the input file and generate files
-    Deployment d = parseDeployment("example.dep");
+    Deployment d = parseDeployment("incubator.dep");
 
     list[File] dockerFiles = getDockerFiles(d);
     File dockerComposeFile = getDockerComposeFile(d);
