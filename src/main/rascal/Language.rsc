@@ -36,9 +36,10 @@ void testFunc() {
 }
 
 Summary mySummarizer(loc l, start[Deployment] input) {
-    rel[str, loc] result = {<"<var.name>", var.src> | /Hardware var  := input};
+    rel[str, loc] publishes  = {<stripQuotes("<id.topic>"), id.src> | /PublishTopic id  := input};
+    rel[str, loc] subscribes = {<stripQuotes("<id.topic>"), id.src> | /SubscribeTopic id := input};
 
     return summary(l,
-        messages = {<src, error("<id> is not defined", src)> | <id, src> <- result}
+        messages = {<src, error("<id> is published, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>}
     );
 }

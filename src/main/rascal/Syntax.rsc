@@ -41,10 +41,12 @@ syntax ExecutionCommand = executionCommand: "executionCommand" "=" String comman
 syntax BuildCommands = buildCommands: "buildCommands" "=" "[" {String ","}* commands "]";
 
 // List of data points that the container publishes / sends data
-syntax PublishList = publishList: "publishes" "=" "[" {String ","}* topics "]";
+syntax PublishList = publishList: "publishes" "=" "[" {PublishTopic ","}* topics "]";
+syntax PublishTopic = publishTopic: String topic;
 
 // List of data points that the container subscribes / listens to
-syntax SubscribeList = subscribeList: "subscribes" "=" "[" {String ","}* topics "]";
+syntax SubscribeList = subscribeList: "subscribes" "=" "[" {SubscribeTopic ","}* topics "]";
+syntax SubscribeTopic = subscribeTopic: String topic;
 
 // List of ports to expose from the container
 syntax PortsList = portsList: "ports" "=" "[" {Int ","}* ports "]";
