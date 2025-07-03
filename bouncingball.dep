@@ -1,0 +1,84 @@
+hardware "client" {
+    service "dashboard" {
+        runtime "python" {
+            version = "3.11"
+            packages = [
+                { name = "numpy", version = "1.24.3" },
+                { name = "pandas", version = "2.0.3" },
+                { name = "matplotlib", version = "3.7.1" },
+                { name = "requests", version = "2.31.0" },
+                { name = "flask", version = "2.3.3" },
+                { name = "werkzeug", version = "2.3.7" },
+                { name = "flask-cors", version = "4.0.0" },
+                { name = "plotly", version = "5.15.0" }
+            ]
+        }
+        publishes = ["simulation_request"]
+        subscribes = ["simulation_response", "user_input"]
+        ports = [5050]
+        copy = [ 
+            { from = "dashboard.py", to = "/"},
+            { from = "templates/", to = "templates/" },
+            { from = "config.json", to = "/" }
+        ]
+        buildCommands = [
+            "apt-get update",
+            "rm -rf /var/lib/apt/lists/*"
+        ]
+        executionCommand = "python3 dashboard.py"
+    }
+}
+
+hardware "server" {
+    service "simulator" {
+        runtime "python" {
+            version = "3.11"
+            packages = [
+                { name = "fmpy", version = "0.3.25" },
+                { name = "numpy", version = "2.3.0" },
+                { name = "pandas", version = "2.3.0" },
+                { name = "matplotlib", version = "3.10.3" },
+                { name = "flask", version = "3.1.1" },
+                { name = "flask-cors", version = "6.0.1" }
+            ]
+        }
+        publishes = ["simulation_response"]
+        subscribes = ["simulation_request"]
+        volumes = [
+            { from = "./simulator/output", to = "/output" }
+        ]
+        copy = [
+            { from = "simulator.py", to = "/"},
+            { from = "bouncingBall.fmu", to = "/" },
+            { from = "config.json", to = "/" }
+        ]
+        buildCommands = [
+            "apt-get update",
+            "apt-get install -y gcc g++ libffi-dev",
+            "rm -rf /var/lib/apt/lists/*",
+            "mkdir -p /output"
+        ]
+        executionCommand = "python3 simulator.py --server --host 0.0.0.0 --port 8000"
+    }
+}
+
+data {
+    "simulation_request" {
+        protocol = "http",
+        address = "http://simulator",
+        port = 8000,
+        endpoint = "/simulate"
+    },
+    "simulation_response" {
+        protocol = "http",
+        address = "http://dashboard",
+        port = 8000,
+        endpoint = "/simulate"
+    },
+    "user_input" {
+        protocol = "http",
+        address = "http://dashboard",
+        port = 5000,
+        endpoint = "/api/simulate"
+    }
+}

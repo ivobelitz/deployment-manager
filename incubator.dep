@@ -1,7 +1,36 @@
-hardware "test_machine" {
+hardware "incubator" {
+    service "controller" {
+        runtime "python" {
+            version = "3.11"
+            packages = ["docker", "influxdb-client", "matplotlib"]
+        }
+        publishes = ["controller_state"]
+        subscribes = ["parameter_update"]
+        copy = [
+            { from = ".", to = "/"}
+        ]
+        config = {
+            "temperature_desired": 35.0,
+            "lower_bound": 5.0,
+            "heating_time": 20.0,
+            "heating_gap": 30.0,
+            "n_samples_period": 40,
+            "n_samples_heating": 5
+        }
+        buildCommands = [
+            "apt update && apt install -y python3-pip",
+            "pip install -r requirements.txt"
+        ]
+        executionCommand = "python3 -m startup.start_low_level_driver_mockup"
+    }
+}
+
+hardware "digital_twin" {
     service "influxdb" {
-        runtime "influxdb" {}
-        publishes = ["topic1", "topic2"]
+        runtime "influxdb" {
+            version = "2.0.4"
+        }
+        subscribes = ["controller_state", "parameter_update"]
         ports = [8086, 8088]
         volumes = [
             { from = "./digital_twin/data_access/influxdbserver/influxdb", to = "/var/lib/influxdb/" }
@@ -9,31 +38,70 @@ hardware "test_machine" {
         copy = [
             { from = "./config.yaml", to = "/config.yaml"}
         ]
-        buildCommands = [
-            "/entrypoint.sh"
-        ]
+        config = {
+            "url": "http://influxdb:8086",
+            "token": "gfBG7LGYwssWDJzK6207sjFEDA-_Lr2ckIpbA4-_6rZDBty1cso5AVC2Beh4wCpZGj-_qHnKJHxie_ow0oOpvw==",
+            "org": "incubator",
+            "bucket": "incubator"
+        }
         executionCommand = "influxd"
     }
     service "rabbitmq" {
-        runtime "rabbitmq" {}
+        runtime "rabbitmq" {
+            version = "3.12"
+        }
         ports = [5672, 15672, 1883]
         copy = [
             { from = "./rabbitmq.conf", to = "/etc/rabbitmq/rabbitmq.conf"}
         ]
+        config = {
+            "ip": "rabbitmq",
+            "port": 5672,
+            "username": "incubator",
+            "password": "incubator",
+            "exchange": "Incubator_AMQP",
+            "type": "topic",
+            "vhost": "/"
+        }
         buildCommands = ["rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_federation_management rabbitmq_stomp"]
+        executionCommand = "rabbitmq-server"
     }
-    service "incubator" {
+    service "simulator" {
         runtime "python" {
             version = "3.11"
         }
-        subscribes = ["topic1"]
+        publishes = ["parameter_update"]
+        subscribes = ["controller_state"]
         copy = [
             { from = ".", to = "/"}
         ]
+        config = {
+            "C_air": 267.55929458,
+            "G_box": 0.5763498,
+            "C_heater": 329.25376821,
+            "G_heater": 1.67053237,
+            "V_heater": 12.15579391,
+            "I_heater": 1.53551347,
+            "initial_box_temperature": 30,
+            "initial_heat_temperature": 30
+        }
         buildCommands = [
             "apt update && apt install -y python3-pip",
             "pip install -r requirements.txt"
         ]
         executionCommand = "python3 -m startup.start_all_services"
+    }
+}
+
+data {
+    "controller_state" {
+        protocol = "amqp",
+        address = "amqp://incubator",
+        port = 5672
+    },
+    "parameter_update" {
+        protocol = "amqp",
+        address = "amqp://incubator",
+        port = 5672
     }
 }

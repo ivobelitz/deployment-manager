@@ -6,7 +6,7 @@ extend lang::std::Whitespace;
 extend lang::std::Comment;
 
 // Deployment contains a set of hardwares
-start syntax Deployment = deployment: Hardware+ hardwares;
+start syntax Deployment = deployment: Hardware+ hardwares DataConfig? dataConfig;
 
 // Hardware contains a set of services
 syntax Hardware = hardware: "hardware" String name "{" Service* services "}";
@@ -32,7 +32,9 @@ syntax Runtime = runtime: "runtime" String name "{"
 
 syntax VersionDecl = versionDecl: "version" "=" String version;
 
-syntax PackagesDecl = packagesDecl: "packages" "=" "[" {String ","}* packageList "]";
+syntax PackagesDecl = packagesDecl: "packages" "=" "[" {PackageItem ","}* packageList "]";
+
+syntax PackageItem = packageItem: "{" "name" "=" String name "," "version" "=" String version "}";
 
 // Execution command that starts the application
 syntax ExecutionCommand = executionCommand: "executionCommand" "=" String command;
@@ -66,6 +68,16 @@ syntax CopyFileItem = copyFileItem: "{" "from" "=" String source "," "to" "=" St
 syntax Config = config: "config" "=" "{" {ConfigItem ","}* items "}";
 
 syntax ConfigItem = configItem: String k ":" ConfigValue v;
+
+syntax DataConfig = dataConfig: "data" "{" {DataItem ","}* items "}";
+
+syntax EndpointDecl = endpointDecl: "endpoint" "=" String endpoint;
+
+syntax DataItem = dataItem: String name "{" 
+                            "protocol" "=" String protocol ","
+                            "address" "=" String address ","
+                            "port" "=" Int port ","?
+                            EndpointDecl? endpoint "}";
 
 syntax ConfigValue = 
                    | stringVal: String string

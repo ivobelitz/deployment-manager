@@ -15,40 +15,141 @@ list[File] getConfigFiles(Deployment d) {
   
   for (Hardware h <- d.hardwares) {
     for (Service s <- h.services)   {
-      if (Config config <- s.config) {
-        results += prepareConfigFile(s, config);
+      // Check if service has any configuration to generate
+      if (hasConfiguration(s, d)) {
+        results += prepareConfigFile(s, d, h);
       }
     }
   }
   return results;
 }
 
-File prepareConfigFile(Service s, Config config) {
+bool hasConfiguration(Service s, Deployment d) {
+  // Check if service has explicit config parameters
+  if (Config config <- s.config) {
+    if (size([item | item <- config.items]) > 0) {
+      return true;
+    }
+  }
+  
+  // Check if service has publish topics
+  if (PublishList publishList <- s.publishes) {
+    list[str] publishTopics = parseList("<publishList.topics>");
+    if (size(publishTopics) > 0) {
+      return true;
+    }
+  }
+  
+  // Check if service has subscribe topics
+  if (SubscribeList subscribeList <- s.subscribes) {
+    list[str] subscribeTopics = parseList("<subscribeList.topics>");
+    if (size(subscribeTopics) > 0) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+File prepareConfigFile(Service s, Deployment d, Hardware h) {
   str serviceName = stripQuotes("<s.name>");
   str jsonContent = "{\n";
   
-  // Process each configuration item
-  list[ConfigItem] items = [item | item <- config.items];
-  int totalItems = size(items);
-  
-  for (int i <- [0..totalItems]) {
-    ConfigItem item = items[i];
-    str k = stripQuotes("<item.k>");
-    str v = convertConfigValueToJson(item.v);
+  list[str] configLines = [];
+
+  if (Config config <- s.config) {
+    // Process each configuration item
+    list[ConfigItem] items = [item | item <- config.items];
     
-    jsonContent += insertTabs(1) + "\"<k>\": <v>";
-    
-    // Add comma if not the last item
-    if (i < totalItems - 1) {
-      jsonContent += ",";
+    for (ConfigItem item <- items) {
+      str k = stripQuotes("<item.k>");
+      str v = convertConfigValueToJson(item.v);
+      configLines += "\"<k>\": <v>";
     }
-    jsonContent += "\n";
   }
   
-  jsonContent += "}";
+  // Add publish topics to configuration
+  if (PublishList publishList <- s.publishes) {
+    list[str] publishTopics = parseList("<publishList.topics>");
+    for (str topic <- publishTopics) {
+      str topicName = stripQuotes(topic);
+      configLines += "\"<topicName>_topic\": \"<topicName>\"";
+    }
+  }
   
-  // Define the output directory
-  str outputDir = "output/" + serviceName + "/";
+  // Add subscribe topics to configuration
+  if (SubscribeList subscribeList <- s.subscribes) {
+    list[str] subscribeTopics = parseList("<subscribeList.topics>");
+    for (str topic <- subscribeTopics) {
+      str topicName = stripQuotes(topic);
+      configLines += "\"<topicName>_topic\": \"<topicName>\"";
+    }
+  }
+  
+  // Join all configuration lines with commas
+  for (int i <- [0..size(configLines)]) {
+    jsonContent += insertTabs(1) + configLines[i];
+    if (i < size(configLines) - 1) {
+      jsonContent += ",\n";
+    } else {
+      jsonContent += "\n";
+    }
+  }
+
+  if (DataConfig dataConfig <- d.dataConfig) {
+      list[DataItem] dataItems = [dataItem | dataItem <- dataConfig.items];
+
+      // Get all topics this service publishes to and subscribes from
+      list[str] topics = [];
+      if (PublishList publishList <- s.publishes) {
+        topics += parseList("<publishList.topics>");
+      }
+      if (SubscribeList subscribeList <- s.subscribes) {
+        topics += parseList("<subscribeList.topics>");
+      }
+      topics = dup(topics);
+
+      // Filter data items to only include topics used by this service
+      list[DataItem] relevantDataItems = [dataItem | DataItem dataItem <- dataItems, stripQuotes("<dataItem.name>") in topics];
+      
+      if (size(relevantDataItems) > 0) {
+        if (size(configLines) > 0) {
+          jsonContent += ",\n";
+        }
+        
+        int totalRelevantItems = size(relevantDataItems);
+        for (int i <- [0..totalRelevantItems]) {
+          DataItem dataItem = relevantDataItems[i];
+          str dataItemName = stripQuotes("<dataItem.name>");
+          
+          jsonContent += insertTabs(1) + "\"<dataItemName>\": {\n";
+          jsonContent += insertTabs(2) + "\"protocol\": <dataItem.protocol>,\n";
+          jsonContent += insertTabs(2) + "\"address\": <dataItem.address>,\n";
+          jsonContent += insertTabs(2) + "\"port\": <dataItem.port>";
+          
+          // Add endpoint if it exists
+          if (EndpointDecl endpointDecl <- dataItem.endpoint) {
+            jsonContent += ",\n";
+            jsonContent += insertTabs(2) + "\"endpoint\": <endpointDecl.endpoint>";
+          }
+          
+          jsonContent += "\n";
+          jsonContent += insertTabs(1) + "}";
+          
+          // Add comma if not the last relevant item
+          if (i < totalRelevantItems - 1) {
+            jsonContent += ",";
+          }
+          jsonContent += "\n";
+        }
+      }
+  }
+
+  jsonContent += "\n}";
+  
+  // Define the output directory with hardware/service structure
+  str hardwareName = stripQuotes("<h.name>");
+  str outputDir = "output/" + hardwareName + "/" + serviceName + "/";
   
   return file(jsonContent, outputDir, "config.json");
 }
@@ -63,16 +164,3 @@ str convertConfigValueToJson(ConfigValue cv) {
   }
 }
 
-//! This is unnecassary
-void writeConfigFile(File output) {
-  // Ensure directory exists
-  loc outputDir = |project://deployment-manager/<output.outputDir>|;
-  if (!exists(outputDir)) {
-    mkDirectory(outputDir);
-  }
-  
-  // Create the config.json file in the specified directory
-  loc outputFile = outputDir + output.fileName;
-  writeFile(outputFile, output.content);
-  println("Configuration file generated successfully at: <outputFile>");
-}

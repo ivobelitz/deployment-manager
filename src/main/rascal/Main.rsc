@@ -8,13 +8,17 @@ import DockerCompose;
 import ConfigurationFiles;
 import Datamodel;
 
-void main() {
+void main(str inputPath) {
     // Parse the input file and generate files
-    Deployment d = parseDeployment("incubator.dep");
+    Deployment d = parseDeployment(inputPath);
 
     list[File] dockerFiles = getDockerFiles(d);
     File dockerComposeFile = getDockerComposeFile(d);
     list[File] configFiles = getConfigFiles(d);
+
+    for (File file <- configFiles) {
+        println("Config file: <file.fileName> in <file.outputDir>");
+    }
 
     for (File output <- dockerFiles) {
         writeFile(output);

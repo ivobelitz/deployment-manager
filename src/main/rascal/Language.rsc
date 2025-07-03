@@ -39,6 +39,9 @@ Summary mySummarizer(loc l, start[Deployment] input) {
     rel[str, loc] publishes  = {<stripQuotes("<id.topic>"), id.src> | /PublishTopic id  := input};
     rel[str, loc] subscribes = {<stripQuotes("<id.topic>"), id.src> | /SubscribeTopic id := input};
 
+    rel[loc, Message] errors = {<src, error("<id> is published to, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>};
+    errors += {<src, error("<id> is subscribed to, but not published to", src)> | <id, src> <- subscribes, id notin publishes<0>};
+
     return summary(l,
         messages = {<src, error("<id> is published, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>}
     );

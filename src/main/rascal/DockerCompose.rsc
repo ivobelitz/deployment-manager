@@ -12,7 +12,7 @@ import List;
 File getDockerComposeFile(Deployment d) {
   str dockerComposeContent = "services: \n";
 
-  bool hasPorts = false;
+  bool hasNetworkServices = false;
 
   for (Hardware h <- d.hardwares) {
     for (Service s <- h.services) {
@@ -20,13 +20,25 @@ File getDockerComposeFile(Deployment d) {
       dockerComposeContent += insertTabs(1) + serviceName + ": \n";
       dockerComposeContent += insertTabs(2) + "image: <serviceName>\n";
 
+      // Check if service needs network access (has ports, publishes, or subscribes)
+      bool needsNetwork = false;
+      
       // Add ports mapping if specified
       if (PortsList portsList <- s.ports) {
-        hasPorts = true;
+        needsNetwork = true;
         dockerComposeContent += insertTabs(2) + "ports: \n";
         for (port <- portsList.ports) {
           dockerComposeContent += insertTabs(3) + "- <port>:<port>\n";
         }
+      }
+      
+      // Check if service publishes or subscribes (needs network for communication)
+      if (PublishList publishesList <- s.publishes) {
+        needsNetwork = true;
+      }
+      
+      if (SubscribeList subscribesList <- s.subscribes) {
+        needsNetwork = true;
       }
       
       // Add volumes mapping if specified
@@ -39,70 +51,31 @@ File getDockerComposeFile(Deployment d) {
         }
       }
 
-      if (hasPorts) {
+      // Add service to network if it needs network access
+      if (needsNetwork) {
+        hasNetworkServices = true;
         dockerComposeContent += insertTabs(2) + "networks: \n";
-        dockerComposeContent += insertTabs(3) + " - app-network\n"; 
-      }
-
-      if (PublishList publishList <- s.publishes || SubscribeList subscribeList <- s.subscribes) {
-        dockerComposeContent += insertTabs(2) + "environment: \n";  
-        dockerComposeContent += insertTabs(3) + "- RABBITMQ_HOST=rabbitmq\n";
-      }
-
-      if (PublishList publishList <- s.publishes) {
-        str packagesStr = "<publishList.topics>";
-        list[str] topics = parseList(packagesStr);
-        // println(topics);
-        
-        // Transform topics list to JSON format: {"topic1": "topic1", "topic2": "topic2", ...}
-        if (size(topics) > 0) {
-          str jsonTopics = "{";     
-          for (int i <- [0..size(topics)]) {
-            jsonTopics += "\\\"<topics[i]>\\\": \\\"<topics[i]>\\\"";
-            if (i < size(topics) - 1) {
-              jsonTopics += ", ";
-            }
-          }
-          jsonTopics += "}";
-          
-          dockerComposeContent += insertTabs(3) + "- \"PUB_TOPICS=<jsonTopics>\"\n";         
-        }
-      }
-      
-      if (SubscribeList subscribeList <- s.subscribes) {
-        str packagesStr = "<subscribeList.topics>";
-        list[str] topics = parseList(packagesStr);
-        
-        // Transform topics list to JSON format: {"topic1": "topic1", "topic2": "topic2", ...}
-        if (size(topics) > 0) {
-          str jsonTopics = "{";
-          for (int i <- [0..size(topics)]) {
-            jsonTopics += "\\\"<topics[i]>\\\": \\\"<topics[i]>\\\"";
-            if (i < size(topics) - 1) {
-              jsonTopics += ", ";
-            }
-          }
-          jsonTopics += "}";
-          
-          dockerComposeContent += insertTabs(3) + "- \"SUB_TOPICS=<jsonTopics>\"\n";
-        }
+        dockerComposeContent += insertTabs(3) + "- app-network\n"; 
       }
       
       // Add volume mount for config.json if service has configuration
-      if (Config config <- s.config) {
-        if (!contains(dockerComposeContent, insertTabs(2) + "volumes:")) {
-          dockerComposeContent += insertTabs(2) + "volumes:\n";
-        }
-        dockerComposeContent += insertTabs(3) + "- ./<serviceName>/config.json:/app/config.json\n";
-      }
+      // if (Config config <- s.config) {
+      //   str hardwareName = stripQuotes("<h.name>");
+      //   if (!contains(dockerComposeContent, insertTabs(2) + "volumes:")) {
+      //     dockerComposeContent += insertTabs(2) + "volumes:\n";
+      //   }
+      //   dockerComposeContent += insertTabs(3) + "- ./<hardwareName>/<serviceName>/config.json:/app/config.json\n";
+      // }
     }
-    // Add network configuration for the hardware
-    if (hasPorts) {
-      dockerComposeContent += "networks:\n";
-      dockerComposeContent += insertTabs(1) + "app-network:\n";
-      dockerComposeContent += insertTabs(2) + "driver: bridge\n";
-    }
-  } 
+  }
+  
+  // Add network configuration if any service needs network access
+  if (hasNetworkServices) {
+    dockerComposeContent += "networks:\n";
+    dockerComposeContent += insertTabs(1) + "app-network:\n";
+    dockerComposeContent += insertTabs(2) + "driver: bridge\n";
+  }
+  
   str outputDir = "output/";
   return file(dockerComposeContent, outputDir, "docker-compose.yml");
 }

@@ -14,16 +14,28 @@ list[File] getDockerFiles(Deployment d) {
   
   for (Hardware h <- d.hardwares) {
     for (Service s <- h.services) {
-      results += prepareDockerfile(s);
+      results += prepareDockerfile(s, h);
     }
   }
   return results;
 }
 
-File prepareDockerfile(Service s) {
+File prepareDockerfile(Service s, Hardware h) {
   str result = "";
   for (Runtime r <- s.runtimes) {
-    result += "<resolveRuntime(r)>\n";
+    result += "<resolveRuntimeBaseImage(r)>\n";
+  }
+  
+  if (BuildCommands buildCommands <- s.buildCommands) {
+    list[str] commands = parseList("<buildCommands.commands>");
+    for (str command <- commands) {
+      result += "RUN <stripQuotes(command)>\n";
+    }
+    result += "\n";
+  }
+  
+  for (Runtime r <- s.runtimes) {
+    result += "<resolveRuntimePackages(r)>\n";
   }
   
   if (CopyFiles copyFiles <- s.copyFiles) {
@@ -43,21 +55,13 @@ File prepareDockerfile(Service s) {
       result += "\n";
   }
 
-  if (BuildCommands buildCommands <- s.buildCommands) {
-    list[str] commands = parseList("<buildCommands.commands>");
-    for (str command <- commands) {
-      result += "RUN <stripQuotes(command)>\n";
-    }
-    result += "\n";
-  }
-
   if (ExecutionCommand executionCommand <- s.executionCommand) {
     str command = stripQuotes("<executionCommand.command>");
     result += "CMD <command>\n";
   }
   
-  // Determine output directory - use default if not specified
-  str outputDir = getOutputDir(s);
+  // Determine output directory - use hardware/service structure
+  str outputDir = getOutputDir(s, h);
   
   return file(result, outputDir, "Dockerfile");
 }
@@ -67,7 +71,8 @@ str resolveExecutionCommand(str input) {
     return command;
 }
 
-str getOutputDir(Service s) {
+str getOutputDir(Service s, Hardware h) {
   str serviceName = stripQuotes("<s.name>");
-  return "output/<serviceName>/";
+  str hardwareName = stripQuotes("<h.name>");
+  return "output/<hardwareName>/<serviceName>/";
 }

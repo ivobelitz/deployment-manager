@@ -9,7 +9,7 @@ import ParseTree;
 str resolveRuntime(Runtime r) {
     str name = stripQuotes("<r.name>");
     str version = "";
-    list[str] packagesList = [];
+    list[PackageItem] packagesList = [];
 
     // println(name);
     if (VersionDecl versionDecl <- r.version) {
@@ -17,9 +17,7 @@ str resolveRuntime(Runtime r) {
         // println(insertTabs(1) + "Version: " + version);
     }
     if (PackagesDecl packagesDecl <- r.packages) {
-        str packagesStr = "<packagesDecl.packageList>";
-        packagesList = parseList(packagesStr);
-        // packages = intercalate(" ", packagesList);  // Join with spaces for command line usage
+        packagesList = [pkg | pkg <- packagesDecl.packageList];
         // println(insertTabs(1) + "Packages: " + toString(packagesList));
     }
 
@@ -32,27 +30,57 @@ str resolveRuntime(Runtime r) {
     }
 }
 
-str resolvePythonDependency(str version, list[str] packages) {
-    // str command = "ENV DEBIAN_FRONTEND=noninteractive \n";
-    // command += "RUN apt-get update -y && \\ \n";
-    // command += "    apt-get install -y software-properties-common && \\ \n";
-    // command += "    add-apt-repository ppa:deadsnakes/ppa -y && \\ \n";
-    // command += "    apt-get update -y && \\ \n";
-    // command += "    apt-get install python<version> -y && \\ \n";
-    // command += "    ln -s /usr/bin/python<version> /usr/bin/python && \\ \n";
-    // command += "    apt-get clean\n";
+str resolveRuntimeBaseImage(Runtime r) {
+    str name = stripQuotes("<r.name>");
+    str version = "";
 
-    // if (size(packages) > 0) {
-    //     command += "RUN ";
-    //     for (int i <- [0 .. size(packages)]) {
-    //         command += "apt-get install -y python3-<stripQuotes(packages[i])>";
-    //         if (i < size(packages) - 1) {
-    //             command += " && ";
-    //         }
-    //     }
-    //     command += "\n";
-    // }
+    if (VersionDecl versionDecl <- r.version) {
+        version = stripQuotes("<versionDecl.version>");
+    }
+
+    switch (name) {
+        case "python": return "FROM python:<stripQuotes(version)>";
+        case "java": return "FROM openjdk:<stripQuotes(version)>";
+        case "influxdb": return "FROM influxdb:2.0.4-alpine";
+        case "rabbitmq": return "FROM rabbitmq:3.12-management";
+        default: return "FROM alpine:latest";
+    }
+}
+
+str resolveRuntimePackages(Runtime r) {
+    str name = stripQuotes("<r.name>");
+    list[PackageItem] packagesList = [];
+
+    if (PackagesDecl packagesDecl <- r.packages) {
+        packagesList = [pkg | pkg <- packagesDecl.packageList];
+    }
+
+    switch (name) {
+        case "python": return resolvePythonPackages(packagesList);
+        case "java": return ""; // Java packages handled differently
+        case "influxdb": return ""; // No packages for influxdb
+        case "rabbitmq": return ""; // No packages for rabbitmq
+        default: return "";
+    }
+}
+
+str resolvePythonDependency(str version, list[PackageItem] packages) {
     str command = "FROM python:<stripQuotes(version)>\n";
+    
+    if (size(packages) > 0) {
+        command += "RUN pip install ";
+        for (int i <- [0 .. size(packages)]) {
+            PackageItem pkg = packages[i];
+            str pkgName = stripQuotes("<pkg.name>");
+            str pkgVersion = stripQuotes("<pkg.version>");
+            command += "<pkgName>==<pkgVersion>";
+            if (i < size(packages) - 1) {
+                command += " \\\n    ";
+            }
+        }
+        command += "\n";
+    }
+    
     return command;
 }
 
@@ -65,9 +93,29 @@ str resolveJavaDependency(str version) {
 }
 
 str resolveInfluxDBDependency(str version) {
-    return "FROM quay.io/influxdb/influxdb:v2.0.3\n";
+    str command = "FROM influxdb:2.0.4-alpine\n";
+    command += "ENTRYPOINT [\"/entrypoint.sh\"]\n"; 
+    return command;
 }
 
 str resolveRabbitMQDependency(str version) {
     return "FROM rabbitmq:3.12-management\n";
+}
+
+str resolvePythonPackages(list[PackageItem] packages) {
+    if (size(packages) == 0) {
+        return "";
+    }
+    
+    str command = "RUN pip install ";
+    for (int i <- [0 .. size(packages)]) {
+        PackageItem pkg = packages[i];
+        str pkgName = stripQuotes("<pkg.name>");
+        str pkgVersion = stripQuotes("<pkg.version>");
+        command += "<pkgName>==<pkgVersion>";
+        if (i < size(packages) - 1) {
+            command += " \\\n    ";
+        }
+    }
+    return command;
 }
