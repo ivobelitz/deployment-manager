@@ -41,8 +41,9 @@ Summary mySummarizer(loc l, start[Deployment] input) {
 
     rel[loc, Message] errors = {<src, error("<id> is published to, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>};
     errors += {<src, error("<id> is subscribed to, but not published to", src)> | <id, src> <- subscribes, id notin publishes<0>};
+    errors += {<src, error("<id> is published to, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>};
 
     return summary(l,
-        messages = {<src, error("<id> is published, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>}
+        messages = errors
     );
 }
