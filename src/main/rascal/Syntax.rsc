@@ -34,7 +34,7 @@ syntax VersionDecl = versionDecl: "version" "=" String version;
 
 syntax PackagesDecl = packagesDecl: "packages" "=" "[" {PackageItem ","}* packageList "]";
 
-syntax PackageItem = packageItem: "{" "name" "=" String name "," "version" "=" String version "}";
+syntax PackageItem = packageItem: "{" "name" "=" String name ("," "version" "=" String version)? "}";
 
 // Execution command that starts the application
 syntax ExecutionCommand = executionCommand: "executionCommand" "=" String command;

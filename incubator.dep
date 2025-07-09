@@ -2,7 +2,24 @@ hardware "incubator" {
     service "controller" {
         runtime "python" {
             version = "3.11"
-            packages = ["docker", "influxdb-client", "matplotlib"]
+            packages = [
+                { name = "control"},
+                { name = "docker", version = "7.1.0"},
+                { name = "filterpy" },
+                { name = "influxdb-client" },
+                { name = "matplotlib" },
+                { name = "numpy" },
+                { name = "oomodelling" },
+                { name = "pandas" },
+                { name = "pika" },
+                { name = "plotly" },
+                { name = "pyhocon" },
+                { name = "pytz" },
+                { name = "requests" },
+                { name = "scipy" },
+                { name = "sympy" },
+                { name = "argparse" }
+            ]
         }
         publishes = ["controller_state"]
         subscribes = ["parameter_update"]
@@ -18,10 +35,9 @@ hardware "incubator" {
             "n_samples_heating": 5
         }
         buildCommands = [
-            "apt update && apt install -y python3-pip",
-            "pip install -r requirements.txt"
+            "apt update && apt install -y python3-pip"
         ]
-        executionCommand = "python3 -m startup.start_low_level_driver_mockup"
+        executionCommand = "python3 -m startup.start_incubator_controller"
     }
 }
 
@@ -44,7 +60,7 @@ hardware "digital_twin" {
             "org": "incubator",
             "bucket": "incubator"
         }
-        executionCommand = "influxd"
+        executionCommand = "/entrypoint.sh influxd"
     }
     service "rabbitmq" {
         runtime "rabbitmq" {
@@ -69,6 +85,24 @@ hardware "digital_twin" {
     service "simulator" {
         runtime "python" {
             version = "3.11"
+            packages = [
+                { name = "control"},
+                { name = "docker", version = "7.1.0"},
+                { name = "filterpy" },
+                { name = "influxdb-client" },
+                { name = "matplotlib" },
+                { name = "numpy" },
+                { name = "oomodelling" },
+                { name = "pandas" },
+                { name = "pika" },
+                { name = "plotly" },
+                { name = "pyhocon" },
+                { name = "pytz" },
+                { name = "requests" },
+                { name = "scipy" },
+                { name = "sympy" },
+                { name = "argparse" }
+            ]
         }
         publishes = ["parameter_update"]
         subscribes = ["controller_state"]
@@ -86,10 +120,9 @@ hardware "digital_twin" {
             "initial_heat_temperature": 30
         }
         buildCommands = [
-            "apt update && apt install -y python3-pip",
-            "pip install -r requirements.txt"
+            "apt update && apt install -y python3-pip"
         ]
-        executionCommand = "python3 -m startup.start_all_services"
+        executionCommand = "python3 -m startup.start_incubator_simulator"
     }
 }
 

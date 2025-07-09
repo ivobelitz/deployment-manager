@@ -72,8 +72,23 @@ str resolvePythonDependency(str version, list[PackageItem] packages) {
         for (int i <- [0 .. size(packages)]) {
             PackageItem pkg = packages[i];
             str pkgName = stripQuotes("<pkg.name>");
-            str pkgVersion = stripQuotes("<pkg.version>");
-            command += "<pkgName>==<pkgVersion>";
+            command += pkgName;
+            
+            // Check if version is specified by looking at the package string representation
+            str pkgStr = "<pkg>";
+            if (contains(pkgStr, "version")) {
+                // Find the version value between quotes after "version ="
+                list[str] parts = split("version = \"", pkgStr);
+                if (size(parts) > 1) {
+                    str versionPart = parts[1];
+                    list[str] versionParts = split("\"", versionPart);
+                    if (size(versionParts) > 0) {
+                        str pkgVersion = versionParts[0];
+                        command += "==<pkgVersion>";
+                    }
+                }
+            }
+            
             if (i < size(packages) - 1) {
                 command += " \\\n    ";
             }
@@ -111,8 +126,23 @@ str resolvePythonPackages(list[PackageItem] packages) {
     for (int i <- [0 .. size(packages)]) {
         PackageItem pkg = packages[i];
         str pkgName = stripQuotes("<pkg.name>");
-        str pkgVersion = stripQuotes("<pkg.version>");
-        command += "<pkgName>==<pkgVersion>";
+        command += pkgName;
+        
+        // Check if version is specified by looking at the package string representation
+        str pkgStr = "<pkg>";
+        if (contains(pkgStr, "version")) {
+            // Find the version value between quotes after "version ="
+            list[str] parts = split("version = \"", pkgStr);
+            if (size(parts) > 1) {
+                str versionPart = parts[1];
+                list[str] versionParts = split("\"", versionPart);
+                if (size(versionParts) > 0) {
+                    str version = versionParts[0];
+                    command += "==<version>";
+                }
+            }
+        }
+        
         if (i < size(packages) - 1) {
             command += " \\\n    ";
         }
