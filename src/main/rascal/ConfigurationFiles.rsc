@@ -151,7 +151,7 @@ File prepareConfigFile(Service s, Deployment d, Hardware h) {
   str hardwareName = stripQuotes("<h.name>");
   str outputDir = "output/" + hardwareName + "/" + serviceName + "/";
   
-  return file(jsonContent, outputDir, "config.json");
+  return file(jsonContent, outputDir, "<serviceName>.json");
 }
 
 str convertConfigValueToJson(ConfigValue cv) {

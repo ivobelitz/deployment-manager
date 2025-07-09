@@ -63,7 +63,7 @@ File prepareDockerfile(Service s, Hardware h) {
   // Determine output directory - use hardware/service structure
   str outputDir = getOutputDir(s, h);
   
-  return file(result, outputDir, "Dockerfile");
+  return file(result, outputDir, "Dockerfile_<stripQuotes("<s.name>")>");
 }
 
 str resolveExecutionCommand(str input) {
