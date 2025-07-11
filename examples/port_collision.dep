@@ -1,0 +1,17 @@
+hardware "test_hardware" {
+    service "service1" {
+        runtime "python" {
+            version = "3.11"
+        }
+        ports = [5050]
+        executionCommand = "python3 service1.py"
+    }
+
+    service "service2" {
+        runtime "python" {
+            version = "3.11"
+        }
+        ports = [5050] // This will cause a port collision
+        executionCommand = "python3 service2.py"
+    }
+}

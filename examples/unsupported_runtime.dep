@@ -1,0 +1,7 @@
+hardware "test_hardware" {
+    service "service1" {
+        runtime "go" { // This will cause an unsupported runtime error
+            version = "1.20"
+        }
+    }
+}
