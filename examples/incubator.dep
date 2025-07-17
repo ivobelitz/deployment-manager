@@ -21,8 +21,8 @@ hardware "incubator" {
                 { name = "argparse" }
             ]
         }
-        publishes = ["controller_state"]
-        subscribes = ["parameter_update"]
+        sends = ["controller_state"]
+        receives = ["parameter_update"]
         copy = [
             { from = ".", to = "/"}
         ]
@@ -46,7 +46,7 @@ hardware "digital_twin" {
         runtime "influxdb" {
             version = "2.0.4"
         }
-        subscribes = ["controller_state", "parameter_update"]
+        receives = ["controller_state", "parameter_update"]
         ports = [8086, 8088]
         volumes = [
             { from = "./digital_twin/data_access/influxdbserver/influxdb", to = "/var/lib/influxdb/" }
@@ -104,8 +104,8 @@ hardware "digital_twin" {
                 { name = "argparse" }
             ]
         }
-        publishes = ["parameter_update"]
-        subscribes = ["controller_state"]
+        sends = ["parameter_update"]
+        receives = ["controller_state"]
         copy = [
             { from = ".", to = "/"}
         ]

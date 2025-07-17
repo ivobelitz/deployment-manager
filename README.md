@@ -27,8 +27,8 @@ hardware "machine_name" {
                 { name = "flask", version = "2.3.2" }
             ]
         }
-        publishes = ["topic1"]
-        subscribes = ["topic2"]
+        sends = ["topic1"]
+        receives = ["topic2"]
         ports = [8080]
         executionCommand = "python3 app.py"
     }
@@ -52,6 +52,8 @@ data {
 
 ## Usage
 
+### Generating Deployments
+
 1. **Define your deployment** in a `.dep` file
 2. **Generate configurations** using the main function:
    ```rascal
@@ -61,6 +63,13 @@ data {
    ```bash
    docker-compose up
    ``` 
+
+### Enabling syntax highlighting and error checking in VS Code
+- Start the LSP server:
+```rascal
+import Language;
+produceLSP();
+```
 
 ## Generated Artifacts
 

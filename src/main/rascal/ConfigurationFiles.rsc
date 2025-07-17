@@ -32,18 +32,18 @@ bool hasConfiguration(Service s, Deployment d) {
     }
   }
   
-  // Check if service has publish topics
-  if (PublishList publishList <- s.publishes) {
-    list[str] publishTopics = parseList("<publishList.topics>");
-    if (size(publishTopics) > 0) {
+  // Check if service has sends topics
+  if (SendsList sendsList <- s.sends) {
+    list[str] sendsTopics = parseList("<sendsList.topics>");
+    if (size(sendsTopics) > 0) {
       return true;
     }
   }
   
-  // Check if service has subscribe topics
-  if (SubscribeList subscribeList <- s.subscribes) {
-    list[str] subscribeTopics = parseList("<subscribeList.topics>");
-    if (size(subscribeTopics) > 0) {
+  // Check if service has receives topics
+  if (ReceivesList receivesList <- s.receives) {
+    list[str] receivesTopics = parseList("<receivesList.topics>");
+    if (size(receivesTopics) > 0) {
       return true;
     }
   }
@@ -68,19 +68,19 @@ File prepareConfigFile(Service s, Deployment d, Hardware h) {
     }
   }
   
-  // Add publish topics to configuration
-  if (PublishList publishList <- s.publishes) {
-    list[str] publishTopics = parseList("<publishList.topics>");
-    for (str topic <- publishTopics) {
+  // Add sends topics to configuration
+  if (SendsList sendsList <- s.sends) {
+    list[str] sendsTopics = parseList("<sendsList.topics>");
+    for (str topic <- sendsTopics) {
       str topicName = stripQuotes(topic);
       configLines += "\"<topicName>_topic\": \"<topicName>\"";
     }
   }
   
-  // Add subscribe topics to configuration
-  if (SubscribeList subscribeList <- s.subscribes) {
-    list[str] subscribeTopics = parseList("<subscribeList.topics>");
-    for (str topic <- subscribeTopics) {
+  // Add receives topics to configuration
+  if (ReceivesList receivesList <- s.receives) {
+    list[str] receivesTopics = parseList("<receivesList.topics>");
+    for (str topic <- receivesTopics) {
       str topicName = stripQuotes(topic);
       configLines += "\"<topicName>_topic\": \"<topicName>\"";
     }
@@ -99,13 +99,13 @@ File prepareConfigFile(Service s, Deployment d, Hardware h) {
   if (DataConfig dataConfig <- d.dataConfig) {
       list[DataItem] dataItems = [dataItem | dataItem <- dataConfig.items];
 
-      // Get all topics this service publishes to and subscribes from
+      // Get all topics this service sends to and receives from
       list[str] topics = [];
-      if (PublishList publishList <- s.publishes) {
-        topics += parseList("<publishList.topics>");
+      if (SendsList sendsList <- s.sends) {
+        topics += parseList("<sendsList.topics>");
       }
-      if (SubscribeList subscribeList <- s.subscribes) {
-        topics += parseList("<subscribeList.topics>");
+      if (ReceivesList receivesList <- s.receives) {
+        topics += parseList("<receivesList.topics>");
       }
       topics = dup(topics);
 

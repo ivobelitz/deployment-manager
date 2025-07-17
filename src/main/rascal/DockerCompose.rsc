@@ -20,7 +20,7 @@ File getDockerComposeFile(Deployment d) {
       dockerComposeContent += insertTabs(1) + serviceName + ": \n";
       dockerComposeContent += insertTabs(2) + "image: <serviceName>\n";
 
-      // Check if service needs network access (has ports, publishes, or subscribes)
+      // Check if service needs network access (has ports, sends, or receives)
       bool needsNetwork = false;
       
       // Add ports mapping if specified
@@ -32,12 +32,12 @@ File getDockerComposeFile(Deployment d) {
         }
       }
       
-      // Check if service publishes or subscribes (needs network for communication)
-      if (PublishList publishesList <- s.publishes) {
+      // Check if service sends or receives (needs network for communication)
+      if (SendsList sendsList <- s.sends) {
         needsNetwork = true;
       }
       
-      if (SubscribeList subscribesList <- s.subscribes) {
+      if (ReceivesList receivesList <- s.receives) {
         needsNetwork = true;
       }
       

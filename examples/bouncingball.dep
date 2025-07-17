@@ -13,13 +13,13 @@ hardware "client" {
                 { name = "plotly", version = "5.15.0" }
             ]
         }
-        publishes = ["simulation_request"]
-        subscribes = ["simulation_response", "user_input"]
+        sends = ["simulation_request"]
+        receives = ["simulation_response", "user_input"]
         ports = [5050]
         copy = [ 
             { from = "dashboard.py", to = "/"},
             { from = "templates/", to = "templates/" },
-            { from = "config.json", to = "/" }
+            { from = "dashboard.json", to = "/" }
         ]
         buildCommands = [
             "apt-get update",
@@ -30,7 +30,7 @@ hardware "client" {
 }
 
 hardware "server" {
-    service "simulator" {
+    service "simulation_model" {
         runtime "python" {
             version = "3.11"
             packages = [
@@ -42,15 +42,15 @@ hardware "server" {
                 { name = "flask-cors", version = "6.0.1" }
             ]
         }
-        publishes = ["simulation_response"]
-        subscribes = ["simulation_request"]
+        sends = ["simulation_response"]
+        receives = ["simulation_request"]
         volumes = [
             { from = "./simulator/output", to = "/output" }
         ]
         copy = [
-            { from = "simulator.py", to = "/"},
+            { from = "simulation_model.py", to = "/"},
             { from = "bouncingBall.fmu", to = "/" },
-            { from = "config.json", to = "/" }
+            { from = "simulation_model.json", to = "/" }
         ]
         buildCommands = [
             "apt-get update",
@@ -58,14 +58,14 @@ hardware "server" {
             "rm -rf /var/lib/apt/lists/*",
             "mkdir -p /output"
         ]
-        executionCommand = "python3 simulator.py --server --host 0.0.0.0 --port 8000"
+        executionCommand = "python3 simulation_model.py --server --host 0.0.0.0 --port 8000"
     }
 }
 
 data {
     "simulation_request" {
         protocol = "http",
-        address = "http://simulator",
+        address = "http://simulation_model",
         port = 8000,
         endpoint = "/simulate"
     },

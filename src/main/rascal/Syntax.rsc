@@ -14,8 +14,8 @@ syntax Hardware = hardware: "hardware" String name "{" Service* services "}";
 // Service contains a number of concepts 
 syntax Service = service: "service" String name "{" 
                           Runtime+ runtimes
-                          PublishList? publishes
-                          SubscribeList? subscribes
+                          SendsList? sends
+                          ReceivesList? receives
                           PortsList? ports
                           VolumesList? volumes
                           CopyFiles? copyFiles
@@ -42,13 +42,13 @@ syntax ExecutionCommand = executionCommand: "executionCommand" "=" String comman
 // Build commands that are executed during the build process
 syntax BuildCommands = buildCommands: "buildCommands" "=" "[" {String ","}* commands "]";
 
-// List of data points that the container publishes / sends data
-syntax PublishList = publishList: "publishes" "=" "[" {PublishTopic ","}* topics "]";
-syntax PublishTopic = publishTopic: String topic;
+// List of data points that the container sends data
+syntax SendsList = sendsList: "sends" "=" "[" {SendsTopic ","}* topics "]";
+syntax SendsTopic = sendsTopic: String topic;
 
-// List of data points that the container subscribes / listens to
-syntax SubscribeList = subscribeList: "subscribes" "=" "[" {SubscribeTopic ","}* topics "]";
-syntax SubscribeTopic = subscribeTopic: String topic;
+// List of data points that the container receives / listens to
+syntax ReceivesList = receivesList: "receives" "=" "[" {ReceivesTopic ","}* topics "]";
+syntax ReceivesTopic = receivesTopic: String topic;
 
 // List of ports to expose from the container
 syntax PortsList = portsList: "ports" "=" "[" {Int ","}* ports "]";

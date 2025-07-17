@@ -75,12 +75,12 @@ rel[loc, Message] checkUnsupportedRuntime(start[Deployment] input) {
 }
 
 Summary mySummarizer(loc l, start[Deployment] input) {
-    rel[str, loc] publishes  = {<stripQuotes("<id.topic>"), id.src> | /PublishTopic id  := input};
-    rel[str, loc] subscribes = {<stripQuotes("<id.topic>"), id.src> | /SubscribeTopic id := input};
+    rel[str, loc] sends  = {<stripQuotes("<id.topic>"), id.src> | /SendsTopic id  := input};
+    rel[str, loc] receives = {<stripQuotes("<id.topic>"), id.src> | /ReceivesTopic id := input};
 
-    rel[loc, Message] errors = {<src, error("<id> is published to, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>};
-    errors += {<src, error("<id> is subscribed to, but not published to", src)> | <id, src> <- subscribes, id notin publishes<0>};
-    errors += {<src, error("<id> is published to, but not subscribed to", src)> | <id, src> <- publishes, id notin subscribes<0>};
+    rel[loc, Message] errors = {<src, error("<id> is sent to, but not received by", src)> | <id, src> <- sends, id notin receives<0>};
+    errors += {<src, error("<id> is received by, but not sent to", src)> | <id, src> <- receives, id notin sends<0>};
+    errors += {<src, error("<id> is sent to, but not received by", src)> | <id, src> <- sends, id notin receives<0>};
 
     errors += getPortCollisions(input);
     errors += checkUnsupportedRuntime(input);
